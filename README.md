@@ -1,5 +1,7 @@
  # topgainers-premarket-scanner
 
+![a](example.png)
+
 Got sick of manually refreshing my free premarket scanners. This non-API web scraper pulls data from free (delayed) premarket scanner(s) for top gainers, further filtering them with custom parameters such as `Change %`, `Last`, `Volume`, `Float`.
 
 Uses urllib (web request) and BeautifulSoup (HTML parsing).
