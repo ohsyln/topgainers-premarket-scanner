@@ -27,12 +27,6 @@ Activate py virtual environment:
 source pyvenv/bin/activate
 ```
 
-Install BeautifulSoup and Texttable:
-
-```
-pip3 install beautifulsoup4 texttable
-```
-
 ## Run script
 
 Edit parameters in `scanner.py` with a text editor:

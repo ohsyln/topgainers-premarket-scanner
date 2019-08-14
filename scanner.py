@@ -3,11 +3,11 @@ from bs4 import BeautifulSoup
 import texttable as tt
 import datetime, time
 
-PERIOD = 15 # seconds per refresh
-GAINS_PERCENT = 10 # at least how many percent gain
-MAX_LAST = 100 # maximum price
-FLOAT_BTW = [2000000,1500000000000] # size of float
-MIN_VOLUME = 10000 # minimum volume
+PERIOD = 60 # seconds per refresh
+GAINS_PERCENT = 20 # at least how many percent gain
+MAX_LAST = 20 # maximum price
+FLOAT_BTW = [2000000,15000000] # size of float
+MIN_VOLUME = 50000 # minimum volume
 
 YAHOO_FIN = 'https://finance.yahoo.com/quote/{}/key-statistics?p={}'
 QUOTE_PAGE = 'http://thestockmarketwatch.com/markets/pre-market/today.aspx'
@@ -21,6 +21,11 @@ MAG = '\033[1;35;40m'
 CYAN = '\033[1;36;40m'
 WHITE = '\033[1;37;40m'
 # -------------------------------------------------------------
+def print_criterias():
+  print('Change% at least: {}%'.format(GAINS_PERCENT))
+  print('Max Last: ${}'.format(MAX_LAST))
+  print('Float between: {:,} < x < {:,}'.format(FLOAT_BTW[0],FLOAT_BTW[1]))
+  print('Minimum volume: {:,}'.format(MIN_VOLUME))
 def acceptable_float_size(flt):
   if flt > FLOAT_BTW[0] and flt < FLOAT_BTW[1]:
     return True
@@ -34,8 +39,9 @@ def flt_str_to_int(flt):
     return int(float(flt[:-1])*1000000)
   else: # billion
     return int(float(flt[:-1])*1000000000)
-def time_now():
-  return str(datetime.datetime.now())[:-7]
+def print_time_now():
+  time_now = str(datetime.datetime.now())[:-7]
+  print('\n{}{} {}(delayed 15 mins, stops when market opens)'.format(RED,time_now,WHITE))
 HEADERS = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.3'}
 def soup_maker(s):
   req = Request(url=s, headers=HEADERS)
@@ -64,12 +70,19 @@ def filter_yahoofin(candidates):
     ticker = candidate.find('a', {'class':'symbol'}).text
     yahoo_fin = YAHOO_FIN.format(ticker, ticker)
     soup = soup_maker(yahoo_fin)
-    flt = soup.find('td', {'class':'Fz(s) Fw(500) Ta(end) Pstart(10px) Miw(60px)'}).text
+    trs = soup.find_all('tr')
+    for tr in trs:
+      td = tr.find('td')
+      if td:
+        if 'Float' in td.text and 'Short' not in td.text:
+          flt = tr.find('td', {'class':'Fz(s) Fw(500) Ta(end) Pstart(10px) Miw(60px)'}).text
     flt2 = flt_str_to_int(flt)
     if acceptable_float_size(flt2):
       passed_candidates.append((candidate,flt))
   return passed_candidates
 def display(cds):
+  if len(cds) == 0:
+    return "No tickers match your criterias at the moment.."
   tab = tt.Texttable()
   headings = ['Ticker','Name','Last','ChgUp','Float','Vol']
   tab.header(headings)
@@ -90,8 +103,8 @@ while 1:
   passed_candidates = filter_yahoofin(eligible_candidates)
   new_display = display(passed_candidates)
   if new_display != old_display:
-    print()
-    print('{}{} {}(delayed 15 mins, stops when market opens)'.format(RED,time_now(),WHITE))
+    print_time_now()
+    print_criterias()
     print(new_display)
     old_display = new_display
   time.sleep(PERIOD)
